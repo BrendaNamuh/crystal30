@@ -166,10 +166,11 @@ const MEMORIES = [
 // Short video clips, scattered between the photos. Files: media/vNN.mp4 (full, with sound),
 // media/vNN-sm.mp4 (small silent loop for the tile), media/vNN-poster.jpg (first frame).
 const V = (file, ar) => ({ name:'', photos:[], audio:null, video:file, ar });
+const P = (file, ar) => ({ name:'', photos:[file], audio:null, video:null, ar });   // extra photo, no audio
 const VIDEOS = [
-  V('v01',0.5625), V('v02',0.566), V('v03',0.5625), V('v04',0.5625),
+  V('v01',0.5625), V('v02',0.566), P('p01',1.299), V('v04',0.5625),
   V('v05',0.75), V('v06',0.5625), V('v07',0.5625),
-  V('v11',0.75), V('v09',0.75),
+  V('v11',0.75), P('p02',0.75),
 ];
 {
   // keep the memories that have content, then drop a video in after every few photos
