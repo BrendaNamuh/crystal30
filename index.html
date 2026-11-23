@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Have I told you lately that I love you?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#ffced5;
+    --bg:#bd1313;
+    --side:max(24px, 10vw);   /* left and right margins */
+    --muted:#555;
+    --empty:#cf3a3a;
+    --u:60px;
+    --edge:max(20px, 3vh);         /* same space above and below, so the main part stays centred */            /* line unit: set by script so everything fits on one screen */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden}
+  body{font-family:"Jost",system-ui,sans-serif;font-weight:300;
+    display:flex;align-items:center;justify-content:center;height:100vh;padding:0;margin:0}
+
+  footer{position:fixed;bottom:18px;font-size:clamp(13px, 1.8vw, 26px);font-weight:300;white-space:nowrap}
+
+
+  #flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+    column-gap:calc(var(--u) * .4);row-gap:calc(var(--u) * .45);
+    width:var(--box);flex:none}
+  #flow.filled{align-content:space-between}
+  .sign{margin-left:auto;align-self:flex-end;font-size:clamp(12px, calc(var(--u) * .27), 24px);line-height:1.2;white-space:nowrap}
+
+  .tok{font-size:var(--u);line-height:1;white-space:nowrap;letter-spacing:.005em}
+  .paren{font-weight:300}
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.15}}
+  #flow .tok{animation:breathe 4.5s ease-in-out infinite;animation-delay:var(--d,0s)}
+  @media (prefers-reduced-motion: reduce){#flow .tok{animation:none}}
+  .gap{width:calc(var(--u) * .35)}
+
+  .ph{display:block;background:var(--empty) center/cover no-repeat;cursor:pointer;
+    transition:opacity .2s ease}
+  .ph:hover{opacity:.8}
+
+  /* centre stage */
+  #stage{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:22px;background:var(--bg);color:var(--ink);
+    opacity:0;pointer-events:none;transition:opacity .3s ease;cursor:zoom-out}
+  #stage.open{opacity:1;pointer-events:auto}
+  #stage .media{display:flex;gap:24px;align-items:center;justify-content:center}
+  #stage img{display:block;max-width:min(86vw,1000px);max-height:76vh}
+  #stage video{display:block;max-width:min(86vw,1000px);max-height:80vh;background:#000}
+  .ph.vid{overflow:hidden}
+  .ph.vid video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  #stage .media.multi img{max-width:min(42vw,560px)}
+  #stage .frame{width:min(60vmin,560px);aspect-ratio:4/5;background:var(--empty)}
+  #stage .meta{display:flex;align-items:center;gap:16px;font-size:30px}
+  #stage .meta .name{text-transform:capitalize}
+  #stage .meta .name:empty{display:none}
+  #stage .track{width:120px;height:1px;background:rgba(255,206,213,.3);position:relative}
+  #stage .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
+  #stage .close{position:fixed;top:18px;right:var(--side);font-size:13px;font-weight:400}
+
+  /* welcome pop-up */
+  #welcome{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:rgba(120,8,8,.25);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    transition:opacity .45s ease}
+  #welcome.gone{opacity:0;pointer-events:none}
+  #welcome .card{background:#fff;color:#bd1313;max-width:600px;width:100%;padding:clamp(36px,7vw,64px) clamp(32px,9vw,88px);
+    text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+
+  /* envelope intro */
+  .env{position:relative;width:min(82vw,440px);aspect-ratio:3/2;cursor:pointer;perspective:1400px;
+    transition:transform .9s cubic-bezier(.5,0,.3,1),opacity .9s ease;outline:none}
+  .env:hover{transform:translateY(-3px)}
+  .env.away{transform:translateY(55vh);opacity:0;pointer-events:none}
+  .env-back{position:absolute;inset:0;background:#f4a9b6;border-radius:6px;box-shadow:0 24px 60px rgba(60,0,0,.35)}
+  .env-clip{position:absolute;left:0;right:0;bottom:0;top:-400%;overflow:hidden;z-index:2;pointer-events:none}
+  .env-clip .card{position:absolute;margin:0;max-width:none;transform-origin:top left;
+    transition:transform 1.1s cubic-bezier(.3,.7,.3,1)}
+  .env-front{position:absolute;inset:0;z-index:3;border-radius:6px;background:#ffced5;
+    clip-path:polygon(0 0,50% 56%,100% 0,100% 100%,0 100%)}
+  .env-front::after{content:"";position:absolute;inset:0;background:#ffc0ca;clip-path:polygon(0 100%,50% 52%,100% 100%)}
+  .env-flap{position:absolute;left:0;right:0;top:0;height:62%;z-index:4;background:#f9b8c3;
+    clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:top center;
+    transition:transform .75s cubic-bezier(.5,0,.3,1),z-index 0s linear .38s}
+  .env.open .env-flap{transform:rotateX(180deg);z-index:1}
+  .env-seal{position:absolute;left:50%;top:60%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;z-index:5;
+    background:#bd1313;color:#ffced5;display:grid;place-items:center;font-size:22px;line-height:1;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);transition:opacity .3s ease,transform .3s ease}
+  .env.open .env-seal{opacity:0;transform:scale(.6)}
+  .env-to{position:absolute;left:0;right:0;top:76%;z-index:5;text-align:center;color:#bd1313;
+    font-size:clamp(14px,2.2vw,19px);font-weight:300;letter-spacing:.04em;transition:opacity .3s ease}
+  .env.open .env-to{opacity:0}
+  .env-hint{position:absolute;left:0;right:0;top:calc(100% + 22px);text-align:center;color:#fff;
+    font-size:14px;letter-spacing:.18em;text-transform:uppercase;transition:opacity .3s ease}
+  .env.open .env-hint{opacity:0}
+  #welcome > .card{position:fixed;margin:0}
+  #welcome h2{font-weight:300;font-size:clamp(28px,4vw,40px);margin-bottom:18px}
+  #welcome p{text-wrap:balance;font-size:clamp(15px,1.6vw,18px);line-height:1.6;font-weight:300;margin-bottom:12px}
+  #welcome button{margin-top:18px;font:inherit;font-size:15px;letter-spacing:.12em;text-transform:uppercase;
+    background:#bd1313;color:#ffced5;border:0;padding:12px 28px;cursor:pointer}
+  #welcome button:hover{background:#a10f0f}
+</style>
+</head>
+<body>
+
+<main id="flow" aria-label="Have I told you lately that I love you? I do. I do, thirty times over"></main>
+
+<div id="welcome" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
+  <div class="env" id="env" tabindex="0" role="button" aria-label="Open the letter">
+    <div class="env-back"></div>
+    <div class="env-clip">
+      <div class="card" id="letter">
+        <h2 id="welcome-title">Hi Crystal!</h2>
+        <p>I know your birthday has passed, but there is one final gift your loved ones would like to share with you.</p>
+        <p>Here is a collection of 30 memories and words of appreciation to celebrate you being 30.</p>
+        <p>You are very loved.</p>
+        <button type="button" id="welcome-open">Open</button>
+      </div>
+    </div>
+    <div class="env-front"></div>
+    <div class="env-flap"></div>
+    <div class="env-seal" aria-hidden="true">&#9829;</div>
+    <div class="env-to">To Crystal, with love</div>
+    <div class="env-hint">tap to open</div>
+  </div>
+</div>
+<div id="stage" aria-hidden="true">
+  <div class="close">close</div>
+  <div class="media"></div>
+  <div class="meta"><span class="name"></span><span class="track"><i></i></span></div>
+</div>
+<audio id="player" preload="none"></audio>
+<audio id="bgm" src="media/song.mp3" loop preload="auto"></audio>
+
+<script>
+// ── MEMORIES ─────────────────────────────────────────────
+// One entry per memory. Files live in media/.
+// photos: file names without .jpg; ar: width/height of the first photo.
+const MEDIA = 'media/';
+const M = (n, name, photos, audio, ar) => ({ n, name, photos, audio, ar });
+const MEMORIES = [
+  M(1,'zion',['01-zion'],'01-zion.mp4',1.484),
+  M(2,'debs',['02-debs'],'02-debs.mp4',0.75),
+  M(3,'leslie',['03-leslie'],'03-leslie.mp4',1.731),
+  M(4,'carole',['04-carole'],'04-carole.mp4',1.333),
+  M(5,'christa',['05-christa'],'05-christa.mp4',0.991),
+  M(6,'givi',['06-givi'],'06-givi.mp4',1.162),
+  M(7,'biko',['07-biko'],'07-biko.mp4',1.475),
+  M(8,'',[],null,0.8),
+  M(9,'lala',['09-lala'],'09-lala.mp4',1.333),
+  M(10,'chantal',['10-chantal'],'10-chantal.mp4',1.333),
+  M(11,'naf',['11-naf'],'11-naf.mp4',1.51),
+  M(12,'taku',['12-taku'],'12-taku.mp4',1.302),
+  M(13,'edna',['13-edna'],'13-edna.mp3',0.75),
+  M(14,'camille',['14-camille'],'14-camille.mp4',1.289),
+  M(15,'meira',['15-meira'],'15-meira.mp4',0.75),
+  M(16,'aubrey',['16-aubrey','16-aubrey_2'],'16-aubrey.mp4',0.75),
+  M(17,'eve',['17-eve'],'17-eve.mp4',1.173),
+  M(18,'deej',['18-deej'],'18-deej.mp4',0.75),
+  M(19,'brenda',['19-brenda'],'19-brenda.mp4',1.073),
+  M(20,'maman',['20-maman'],'20-maman.mp4',1.126),
+  M(21,'papa',['21-papa'],null,1.055),
+  M(22,'elsa',['22-elsa'],'22-elsa.mp4',1.129),
+];
+// Short video clips, scattered between the photos. Files: media/vNN.mp4 (full, with sound),
+// media/vNN-sm.mp4 (small silent loop for the tile), media/vNN-poster.jpg (first frame).
+const V = (file, ar) => ({ name:'', photos:[], audio:null, video:file, ar });
+const VIDEOS = [
+  V('v01',0.5625), V('v02',0.566), V('v03',0.5625), V('v04',0.5625),
+  V('v05',0.75), V('v06',0.5625), V('v07',0.5625),
+  V('v11',0.75), V('v09',0.75),
+];
+{
+  // keep the memories that have content, then drop a video in after every few photos
+  const people = MEMORIES.filter(m => m.photos.length);
+  const SLOTS = [2, 5, 9, 12, 16, 19, 23, 26, 28];   // positions (0-29) that get a video
+  const mixed = [];
+  let p = 0, v = 0;
+  for (let i = 0; i < 30; i++) mixed.push(SLOTS.includes(i) ? VIDEOS[v++] : people[p++]);
+  MEMORIES.length = 0; MEMORIES.push(...mixed.filter(Boolean));
+}
+// ─────────────────────────────────────────────────────────
+
+// The sentence, one word per bracket, with the photos flowing between the words
+const WORDS = ['Have', 'I', 'told', 'you', 'lately', 'that', 'I', 'love you?'];
+const GROUPS = [4, 4, 4, 4, 4, 4, 3, 3];      // how many photos go with each word (adds up to 30)
+const SIZES = [1.15, 0.8, 1.0, 0.65, 1.2, 0.9];   // photo heights, in line units
+
+const flow = document.getElementById('flow');
+let wi = 0;
+const word = (text, cls) => { const s = document.createElement('span'); s.className = 'tok ' + (cls || ''); s.textContent = text; s.style.setProperty('--d', (wi++ * 0.45) + 's'); flow.appendChild(s); return s; };
+const photos = [];
+let sign;
+
+let n = 0;
+GROUPS.forEach((size, g) => {
+  const group = MEMORIES.slice(n, n + size);
+  const start = n;
+  const wordAt = g === GROUPS.length - 1 ? size : [0, 1, 0, 2, 1, 0, 1][g];   // words move around; the last one ends the text
+  group.forEach((m, k) => {
+    if (k === wordAt) word(WORDS[g]);
+    const el = document.createElement('span');
+    el.className = 'ph';
+    el.dataset.h = SIZES[(start + k) % SIZES.length];
+    el.dataset.ar = m.ar;
+    el.title = m.name ? m.name : '';
+    if (m.photos.length) el.style.backgroundImage = `url("${MEDIA + m.photos[0]}-sm.jpg")`;
+    if (m.video) {
+      el.classList.add('vid');
+      el.innerHTML = `<video src="${MEDIA + m.video}-sm.mp4" poster="${MEDIA + m.video}-poster.jpg" muted loop autoplay playsinline preload="auto"></video>`;
+    }
+    el.addEventListener('click', () => openMemory(start + k));
+    flow.appendChild(el);
+    photos.push(el);
+  });
+  if (wordAt >= group.length) word(WORDS[g]);
+  n += size;
+});
+
+// the sign-off sits at the end of the last line, bottom right
+
+sign = document.createElement('span'); sign.className = 'sign'; sign.textContent = 'I do. I do, thirty times over'; flow.appendChild(sign);
+
+// Size every photo from the current line unit
+function sizePhotos(u){
+  photos.forEach(el => {
+    const h = u * parseFloat(el.dataset.h), w = h * parseFloat(el.dataset.ar);
+    el.style.height = h + 'px'; el.style.width = w + 'px';
+  });
+}
+
+// Find the biggest line unit that still fits everything on one screen
+function fit(){
+  const root = document.documentElement;
+  const edge = Math.max(20, window.innerHeight * 0.03);   /* matches --edge */
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const avail = vh - edge * 2;                   // equal room top and bottom
+  // an almost-square block in the middle of the screen
+  const box = vw - Math.max(32, vw * 0.04) * 2;   // use the full width, with a slim margin
+  root.style.setProperty('--box', box + 'px');
+  let lo = 14, hi = 200;
+  for (let k = 0; k < 18; k++) {
+    const mid = (lo + hi) / 2;
+    document.documentElement.style.setProperty('--u', mid + 'px');
+    sizePhotos(mid);
+    flow.classList.remove('filled'); flow.style.height = '';
+    if (flow.scrollHeight <= avail) lo = mid; else hi = mid;
+  }
+  document.documentElement.style.setProperty('--u', lo + 'px');
+  sizePhotos(lo);
+  // stretch the lines down so the block fills the page top to bottom
+  flow.style.height = avail + 'px'; flow.classList.add('filled');
+}
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(fit, 80); });
+fit();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+// Centre stage + audio
+const stage = document.getElementById('stage');
+const player = document.getElementById('player');
+const bar = stage.querySelector('.track i');
+// Background song: starts softly when the pop-up is closed, gets very quiet while a
+// memory is open, and comes back up when it's closed. Uses Web Audio so the volume
+// changes also work on iPhones.
+const bgm = (() => {
+  const el = document.getElementById('bgm');
+  const SOFT = 0.18, QUIET = 0.025;
+  let ctx = null, gain = null, playing = false, level = SOFT;
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    gain = ctx.createGain(); gain.gain.value = 0;
+    ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
+  } catch (e) { ctx = gain = null; el.volume = 0; }
+  const ramp = (to, secs) => {
+    level = to;
+    if (!playing) return;
+    if (!gain) { el.volume = to; return; }
+    const t = ctx.currentTime;
+    gain.gain.cancelScheduledValues(t);
+    gain.gain.setValueAtTime(gain.gain.value, t);
+    gain.gain.linearRampToValueAtTime(to, t + secs);
+  };
+  const tryPlay = () => {
+    if (playing) return Promise.resolve();
+    return (ctx ? ctx.resume() : Promise.resolve())
+      .then(() => el.play())
+      .then(() => { if (ctx && ctx.state !== 'running') throw 0; playing = true; ramp(level, 2.5); });
+  };
+  // try straight away, while the pop-up is showing; if the browser blocks sound
+  // until the first tap or click, start on that first interaction instead
+  const kick = () => tryPlay().then(() => ['pointerdown','touchstart','keydown'].forEach(ev => window.removeEventListener(ev, kick, true))).catch(() => {});
+  ['pointerdown','touchstart','keydown'].forEach(ev => window.addEventListener(ev, kick, true));
+  tryPlay().catch(() => {});
+  return {
+    start(){ kick(); },
+    duck(){ ramp(QUIET, 0.6); },
+    restore(){ ramp(SOFT, 1.5); },
+  };
+})();
+
+function openMemory(i){
+  bgm.duck();
+  const m = MEMORIES[i];
+  const media = stage.querySelector('.media');
+  media.innerHTML = m.video
+    ? `<video src="${MEDIA + m.video}.mp4" poster="${MEDIA + m.video}-poster.jpg" autoplay loop playsinline></video>`
+    : m.photos.length
+    ? m.photos.map(ph => `<img src="${MEDIA + ph}.jpg" alt="">`).join('')
+    : `<div class="frame"></div>`;
+  const vid = media.querySelector('video');
+  if (vid) {
+    vid.addEventListener('timeupdate', () => { if (vid.duration) bar.style.width = (vid.currentTime / vid.duration * 100) + '%'; });
+    vid.play().catch(() => { vid.muted = true; vid.play().catch(()=>{}); });
+  }
+  media.classList.toggle('multi', m.photos.length > 1);
+  stage.querySelector('.meta .name').textContent = m.name;
+  bar.style.width = '0';
+  stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
+  player.pause();
+  if (m.audio) { player.src = MEDIA + m.audio; player.currentTime = 0; player.play().catch(()=>{}); }
+  else { player.removeAttribute('src'); }
+}
+function closeMemory(){
+  bgm.restore();
+  stage.classList.remove('open'); stage.setAttribute('aria-hidden','true');
+  player.pause();
+  const v = stage.querySelector('.media video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+}
+player.addEventListener('timeupdate', () => {
+  if (player.duration) bar.style.width = (player.currentTime/player.duration*100) + '%';
+});
+stage.addEventListener('click', closeMemory);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMemory(); });
+// Welcome: a sealed envelope. Tapping it starts the song, opens the flap and the letter
+// slides out and settles in the middle of the screen. "Open" then shows the memories.
+const welcome = document.getElementById('welcome');
+const env = document.getElementById('env');
+const letter = document.getElementById('letter');
+let stage0 = 'sealed';   // sealed → opening → letter → closed
+const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const letterWidth = () => Math.min(600, window.innerWidth - 48);
+function centreLetter(){            // final spot: middle of the screen
+  const w = letterWidth();
+  letter.style.width = w + 'px';
+  const h = letter.offsetHeight;
+  letter.style.left = (window.innerWidth - w) / 2 + 'px';
+  letter.style.top = Math.max(16, (window.innerHeight - h) / 2) + 'px';
+}
+function tuckLetter(){              // starting spot: small, inside the envelope
+  const ew = env.offsetWidth, eh = env.offsetHeight, w = letterWidth();
+  letter.style.width = w + 'px';
+  const k = (ew * 0.86) / w;
+  letter._k = k;
+  letter.style.left = (ew - w * k) / 2 + 'px';
+  letter.style.top = (eh * 4 + eh * 0.1) + 'px';           // clip box starts 4 envelope-heights above
+  letter.style.transform = `scale(${k})`;
+}
+tuckLetter();
+
+function openEnvelope(){
+  if (stage0 !== 'sealed') return;
+  stage0 = 'opening';
+  bgm.start();
+  if (still) { showLetter(); return; }
+  env.classList.add('open');
+  // slide the letter up and out
+  setTimeout(() => {
+    const lift = letter.offsetHeight * letter._k - env.offsetHeight * 0.5;
+    letter.style.transform = `translateY(${-lift}px) scale(${letter._k})`;
+  }, 650);
+  setTimeout(showLetter, 1750);
+}
+function showLetter(){
+  // move the letter out of the envelope to the middle of the screen, smoothly
+  const first = letter.getBoundingClientRect();
+  letter.style.transition = 'none';
+  welcome.appendChild(letter);
+  letter.style.transform = 'none';
+  centreLetter();
+  const last = letter.getBoundingClientRect();
+  letter.style.transform = `translate(${first.left - last.left}px, ${first.top - last.top}px) scale(${first.width / last.width})`;
+  letter.getBoundingClientRect();
+  letter.style.transition = still ? 'none' : 'transform 1s cubic-bezier(.3,.7,.3,1)';
+  letter.style.transform = 'none';
+  env.classList.add('away');
+  setTimeout(() => { env.style.display = 'none'; }, 900);
+  stage0 = 'letter';
+  document.getElementById('welcome-open').focus({ preventScroll: true });
+}
+const closeWelcome = () => { if (stage0 !== 'letter') return; stage0 = 'closed'; welcome.classList.add('gone'); bgm.start(); };
+
+env.addEventListener('click', openEnvelope);
+env.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEnvelope(); } });
+welcome.addEventListener('click', e => { if (e.target === welcome) { stage0 === 'sealed' ? openEnvelope() : closeWelcome(); } });
+document.getElementById('welcome-open').addEventListener('click', closeWelcome);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeWelcome(); });
+window.addEventListener('resize', () => { if (stage0 === 'letter') centreLetter(); else if (stage0 === 'sealed') tuckLetter(); });
+</script>
+</body>
+</html>
