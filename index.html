@@ -58,11 +58,14 @@
   #stage .meta .name:empty{display:none}
   #stage .track{width:120px;height:1px;background:rgba(255,206,213,.3);position:relative}
   #stage .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
-  #stage .vol{display:flex;align-items:center;gap:8px;color:var(--ink);cursor:default}
-  #stage .vol.low .w2,#stage .vol.mute .w1,#stage .vol.mute .w2{opacity:.2}
-  #vol{-webkit-appearance:none;appearance:none;width:110px;height:2px;background:rgba(255,206,213,.35);outline:none;cursor:pointer}
-  #vol::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);border:0}
-  #vol::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:0}
+  #stage .mus{display:flex;align-items:center;gap:8px;color:var(--ink);cursor:default;margin-left:8px}
+  #stage .mus-ico{background:none;border:0;padding:4px;color:inherit;cursor:pointer;display:grid;place-items:center}
+  #stage .mus .x{opacity:0}
+  #stage .mus.mute .x{opacity:1}
+  #stage .mus.mute svg{opacity:.6}
+  #musvol{-webkit-appearance:none;appearance:none;width:110px;height:2px;background:rgba(255,206,213,.35);outline:none;cursor:pointer}
+  #musvol::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--ink);border:0}
+  #musvol::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--ink);border:0}
   #stage .close{position:fixed;top:18px;right:var(--side);font-size:13px;font-weight:400}
 
   /* welcome pop-up */
@@ -133,7 +136,7 @@
 <div id="stage" aria-hidden="true">
   <div class="close">close</div>
   <div class="media"></div>
-  <div class="meta"><span class="name"></span><span class="track"><i></i></span><label class="vol" title="Volume"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="w1" d="M16 9.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="w2" d="M18.5 7a7 7 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><input type="range" id="vol" min="0" max="1" step="0.01" value="1" aria-label="Volume"></label></div>
+  <div class="meta"><span class="name"></span><span class="track"><i></i></span><label class="mus" title="Background music volume"><button type="button" class="mus-ico" aria-label="Mute or unmute background music"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor"/><path class="x" d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><input type="range" id="musvol" min="0" max="1" step="0.01" value="1" aria-label="Background music volume"></label></div>
 </div>
 <audio id="player" preload="none"></audio>
 <audio id="bgm" src="media/song.mp3" loop preload="auto"></audio>
@@ -272,14 +275,15 @@ const bar = stage.querySelector('.track i');
 const bgm = (() => {
   const el = document.getElementById('bgm');
   const SOFT = 0.18, QUIET = 0.025;
-  let ctx = null, gain = null, playing = false, level = SOFT;
+  let ctx = null, gain = null, playing = false, level = SOFT, mix = 1;
   try {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     gain = ctx.createGain(); gain.gain.value = 0;
     ctx.createMediaElementSource(el).connect(gain).connect(ctx.destination);
   } catch (e) { ctx = gain = null; el.volume = 0; }
-  const ramp = (to, secs) => {
-    level = to;
+  const ramp = (lvl, secs) => {
+    level = lvl;
+    const to = lvl * mix;            // the listener's music slider scales every level
     if (!playing) return;
     if (!gain) { el.volume = to; return; }
     const t = ctx.currentTime;
@@ -300,34 +304,20 @@ const bgm = (() => {
   tryPlay().catch(() => {});
   return {
     start(){ kick(); },
-    ctx: () => ctx,
     duck(){ ramp(QUIET, 0.6); },
     restore(){ ramp(SOFT, 1.5); },
+    setMix(v){ mix = v; ramp(level, 0.15); },
   };
 })();
 
-// Volume for the memory's own audio or video (the slider under the photo).
-// Uses Web Audio when it's running so it also works on iPhones.
-const memVol = (() => {
-  const slider = document.getElementById('vol'), label = slider.parentElement;
-  let level = 1;
-  const nodes = new Map();          // media element → gain node
-  const apply = () => {
-    nodes.forEach(g => { g.gain.value = level; });
-    [player, stage.querySelector('.media video')].forEach(el => { if (el && !nodes.has(el)) el.volume = level; });
-    label.classList.toggle('mute', level === 0);
-    label.classList.toggle('low', level > 0 && level < 0.5);
-  };
-  const hook = el => {
-    const ctx = bgm.ctx();
-    if (!el || nodes.has(el) || !ctx || ctx.state !== 'running') { apply(); return; }
-    try { const g = ctx.createGain(); ctx.createMediaElementSource(el).connect(g).connect(ctx.destination); nodes.set(el, g); }
-    catch (e) {}
-    apply();
-  };
-  slider.addEventListener('input', () => { level = parseFloat(slider.value); apply(); });
+// Background-music slider (shown under an opened memory), for quiet voice notes
+(() => {
+  const slider = document.getElementById('musvol'), label = slider.parentElement;
+  let last = 1;
+  const set = v => { slider.value = v; bgm.setMix(v); label.classList.toggle('mute', v === 0); };
+  slider.addEventListener('input', () => { const v = parseFloat(slider.value); if (v > 0) last = v; set(v); });
+  label.querySelector('.mus-ico').addEventListener('click', () => set(parseFloat(slider.value) > 0 ? 0 : last));
   ['click','pointerdown'].forEach(ev => label.addEventListener(ev, e => e.stopPropagation()));
-  return { hook, forget: el => nodes.delete(el) };
 })();
 
 function openMemory(i){
@@ -342,7 +332,6 @@ function openMemory(i){
   const vid = media.querySelector('video');
   if (vid) {
     vid.addEventListener('timeupdate', () => { if (vid.duration) bar.style.width = (vid.currentTime / vid.duration * 100) + '%'; });
-    memVol.hook(vid);
     vid.play().catch(() => { vid.muted = true; vid.play().catch(()=>{}); });
   }
   media.classList.toggle('multi', m.photos.length > 1);
@@ -350,7 +339,6 @@ function openMemory(i){
   bar.style.width = '0';
   stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
   player.pause();
-  memVol.hook(player);
   if (m.audio) { player.src = MEDIA + m.audio; player.currentTime = 0; player.play().catch(()=>{}); }
   else { player.removeAttribute('src'); }
 }
@@ -358,7 +346,7 @@ function closeMemory(){
   bgm.restore();
   stage.classList.remove('open'); stage.setAttribute('aria-hidden','true');
   player.pause();
-  const v = stage.querySelector('.media video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); memVol.forget(v); }
+  const v = stage.querySelector('.media video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
 }
 player.addEventListener('timeupdate', () => {
   if (player.duration) bar.style.width = (player.currentTime/player.duration*100) + '%';
