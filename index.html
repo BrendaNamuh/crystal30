@@ -181,8 +181,6 @@ const VIDEOS = [
   for (let i = 0; i < 30; i++) mixed.push(SLOTS.includes(i) ? VIDEOS[v++] : people[p++]);
   MEMORIES.length = 0; MEMORIES.push(...mixed.filter(Boolean));
 }
-// hand-picked position swaps (counting from 1): 11 ↔ 13
-[[11, 13]].forEach(([a, b]) => { [MEMORIES[a-1], MEMORIES[b-1]] = [MEMORIES[b-1], MEMORIES[a-1]]; });
 // ─────────────────────────────────────────────────────────
 
 // The sentence, one word per bracket, with the photos flowing between the words
