@@ -47,8 +47,8 @@
     opacity:0;pointer-events:none;transition:opacity .3s ease;cursor:zoom-out}
   #stage.open{opacity:1;pointer-events:auto}
   #stage .media{display:flex;gap:24px;align-items:center;justify-content:center}
-  #stage img{display:block;max-width:min(86vw,1000px);max-height:76vh}
-  #stage video{display:block;max-width:min(86vw,1000px);max-height:80vh;background:#000}
+  #stage img{display:block;max-width:min(86vw,1000px);max-height:calc(100vh - 190px)}
+  #stage video{display:block;max-width:min(86vw,1000px);max-height:calc(100vh - 190px);background:#000}
   .ph.vid{overflow:hidden}
   .ph.vid video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
   #stage .media.multi img{max-width:min(42vw,560px)}
@@ -58,19 +58,18 @@
   #stage .meta .name:empty{display:none}
   #stage .track{width:120px;height:1px;background:rgba(255,206,213,.3);position:relative}
   #stage .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
-  #stage .mwrap{position:relative}
-  #stage .mus{position:absolute;top:0;bottom:0;left:calc(100% + 14px);width:24px;display:flex;flex-direction:column;
+  #stage .mwrap{position:relative;margin-top:40px}
+  #stage .mus{position:absolute;right:0;bottom:calc(100% + 10px);height:24px;display:flex;flex-direction:row;
     align-items:center;gap:10px;color:var(--ink);cursor:default}
   #stage .mus-ico{background:none;border:0;padding:2px;color:inherit;cursor:pointer;display:grid;place-items:center}
   #stage .mus .x{opacity:0}
   #stage .mus.mute .x{opacity:1}
   #stage .mus.mute svg{opacity:.6}
-  #stage .vtrack{position:relative;flex:1;width:24px;cursor:pointer;touch-action:none;outline:none}
-  #stage .vtrack::before{content:"";position:absolute;left:11px;top:0;bottom:0;width:2px;background:rgba(255,206,213,.35)}
-  #stage .vtrack .fill{position:absolute;left:11px;width:2px;bottom:0;background:var(--ink)}
-  #stage .vtrack .knob{position:absolute;left:5px;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--ink)}
+  #stage .vtrack{position:relative;width:140px;height:24px;cursor:pointer;touch-action:none;outline:none}
+  #stage .vtrack::before{content:"";position:absolute;top:11px;left:0;right:0;height:2px;background:rgba(255,206,213,.35)}
+  #stage .vtrack .fill{position:absolute;top:11px;height:2px;left:0;background:var(--ink)}
+  #stage .vtrack .knob{position:absolute;top:5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink)}
   #stage .vtrack:focus-visible .knob{box-shadow:0 0 0 3px rgba(255,206,213,.4)}
-  @media (max-width:600px){ #stage img,#stage video{max-width:76vw} #stage .media.multi img{max-width:37vw} }
   #stage .close{position:fixed;top:18px;right:var(--side);font-size:13px;font-weight:400}
 
   /* welcome pop-up */
@@ -144,7 +143,7 @@
     <div class="media"></div>
     <div class="mus" title="Background music volume">
       <button type="button" class="mus-ico" aria-label="Mute or unmute background music"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor"/><path class="x" d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-      <div class="vtrack" role="slider" tabindex="0" aria-label="Background music volume" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i class="fill"></i><b class="knob"></b></div>
+      <div class="vtrack" role="slider" tabindex="0" aria-label="Background music volume" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i class="fill"></i><b class="knob"></b></div>
     </div>
   </div>
   <div class="meta"><span class="name"></span><span class="track"><i></i></span></div>
@@ -321,8 +320,8 @@ const bgm = (() => {
   };
 })();
 
-// Background-music slider: a vertical line along the right edge of the opened photo.
-// Full at the top; drag down to make the song quieter (bottom = silent).
+// Background-music slider: a short line above the top-right corner of the opened photo.
+// Full at the right; drag left to make the song quieter (far left = silent).
 (() => {
   const box = document.querySelector('#stage .mus'), track = box.querySelector('.vtrack');
   const fill = track.querySelector('.fill'), knob = track.querySelector('.knob');
@@ -330,13 +329,13 @@ const bgm = (() => {
   const set = v => {
     value = Math.max(0, Math.min(1, v));
     if (value > 0) last = value;
-    fill.style.height = (value * 100) + '%';
-    knob.style.top = ((1 - value) * 100) + '%';
+    fill.style.width = (value * 100) + '%';
+    knob.style.left = (value * 100) + '%';
     track.setAttribute('aria-valuenow', Math.round(value * 100));
     box.classList.toggle('mute', value === 0);
     bgm.setMix(value);
   };
-  const fromPointer = e => { const r = track.getBoundingClientRect(); set(1 - (e.clientY - r.top) / r.height); };
+  const fromPointer = e => { const r = track.getBoundingClientRect(); set((e.clientX - r.left) / r.width); };
   track.addEventListener('pointerdown', e => { track.setPointerCapture(e.pointerId); fromPointer(e); });
   track.addEventListener('pointermove', e => { if (track.hasPointerCapture(e.pointerId)) fromPointer(e); });
   track.addEventListener('keydown', e => {
