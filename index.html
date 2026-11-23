@@ -47,8 +47,8 @@
     opacity:0;pointer-events:none;transition:opacity .3s ease;cursor:zoom-out}
   #stage.open{opacity:1;pointer-events:auto}
   #stage .media{display:flex;gap:24px;align-items:center;justify-content:center}
-  #stage img{display:block;max-width:min(86vw,1000px);max-height:calc(100vh - 190px)}
-  #stage video{display:block;max-width:min(86vw,1000px);max-height:calc(100vh - 190px);background:#000}
+  #stage img{display:block;max-width:min(86vw,1000px);max-height:76vh}
+  #stage video{display:block;max-width:min(86vw,1000px);max-height:80vh;background:#000}
   .ph.vid{overflow:hidden}
   .ph.vid video{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
   #stage .media.multi img{max-width:min(42vw,560px)}
@@ -58,8 +58,8 @@
   #stage .meta .name:empty{display:none}
   #stage .track{width:120px;height:1px;background:rgba(255,206,213,.3);position:relative}
   #stage .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
-  #stage .mwrap{position:relative;margin-top:40px}
-  #stage .mus{position:absolute;right:0;bottom:calc(100% + 10px);height:24px;display:flex;flex-direction:row;
+  #stage .mwrap{position:relative}
+  #stage .mus{position:fixed;left:4vw;top:16px;height:24px;z-index:2;display:flex;flex-direction:row;
     align-items:center;gap:10px;color:var(--ink);cursor:default}
   #stage .mus-ico{background:none;border:0;padding:2px;color:inherit;cursor:pointer;display:grid;place-items:center}
   #stage .mus .x{opacity:0}
@@ -320,7 +320,7 @@ const bgm = (() => {
   };
 })();
 
-// Background-music slider: a short line above the top-right corner of the opened photo.
+// Background-music slider: a short line in the top-left corner while a memory is open.
 // Full at the right; drag left to make the song quieter (far left = silent).
 (() => {
   const box = document.querySelector('#stage .mus'), track = box.querySelector('.vtrack');
