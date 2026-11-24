@@ -59,8 +59,8 @@
   #stage .track{width:180px;height:22px;position:relative;cursor:pointer;touch-action:none;outline:none}
   #stage .track::before{content:"";position:absolute;left:0;right:0;top:10px;height:2px;background:rgba(255,206,213,.3)}
   #stage .track i{position:absolute;left:0;top:10px;height:2px;width:0;background:var(--ink)}
-  #stage .track b{position:absolute;top:6px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);transition:transform .15s}
-  #stage .track:hover b,#stage .track.drag b{transform:scale(1.25)}
+  #stage .track b{display:none}
+  #stage .track:hover::before,#stage .track:hover i,#stage .track.drag::before,#stage .track.drag i{height:3px;top:9.5px}
   #stage .time{font-size:12px;letter-spacing:.04em;opacity:.8;min-width:78px;font-variant-numeric:tabular-nums}
   #stage .time:empty{display:none}
   @media (max-width:600px){ #stage .meta{font-size:24px;gap:12px;flex-wrap:wrap;justify-content:center;max-width:92vw} #stage .track{width:150px} }
