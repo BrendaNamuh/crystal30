@@ -62,6 +62,8 @@
   #stage .mus{position:fixed;left:4vw;top:16px;height:24px;z-index:2;display:flex;flex-direction:row;
     align-items:center;gap:10px;color:var(--ink);cursor:default}
   #stage .mus-ico{background:none;border:0;padding:2px;color:inherit;cursor:pointer;display:grid;place-items:center}
+  #stage .mus-label{margin-left:8px;font-size:12px;letter-spacing:.06em;opacity:.8;white-space:nowrap;user-select:none}
+  @media (max-width:600px){ #stage .mus-label{position:absolute;left:34px;top:24px;margin-left:0} }
   #stage .mus .x{opacity:0}
   #stage .mus.mute .x{opacity:1}
   #stage .mus.mute svg{opacity:.6}
@@ -144,6 +146,7 @@
     <div class="mus" title="Background music volume">
       <button type="button" class="mus-ico" aria-label="Mute or unmute background music"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor"/><path class="x" d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
       <div class="vtrack" role="slider" tabindex="0" aria-label="Background music volume" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i class="fill"></i><b class="knob"></b></div>
+      <span class="mus-label">background music</span>
     </div>
   </div>
   <div class="meta"><span class="name"></span><span class="track"><i></i></span></div>
