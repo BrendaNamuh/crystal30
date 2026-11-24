@@ -65,19 +65,19 @@
   #stage .time:empty{display:none}
   @media (max-width:600px){ #stage .meta{font-size:24px;gap:12px;flex-wrap:wrap;justify-content:center;max-width:92vw} #stage .track{width:150px} }
   #stage .mwrap{position:relative}
-  #stage .mus{position:fixed;left:4vw;top:16px;height:24px;z-index:2;display:flex;flex-direction:row;
-    align-items:center;gap:10px;color:var(--ink);cursor:default}
-  #stage .mus-ico{background:none;border:0;padding:2px;color:inherit;cursor:pointer;display:grid;place-items:center}
-  #stage .mus-label{margin-left:8px;font-size:12px;letter-spacing:.06em;opacity:.8;white-space:nowrap;user-select:none}
-  @media (max-width:600px){ #stage .mus-label{position:absolute;left:34px;top:24px;margin-left:0} }
+  #stage .mus{position:fixed;left:4vw;top:14px;z-index:2;display:flex;align-items:center;gap:14px;color:var(--ink);cursor:default}
+  #stage .mus-head{display:flex;flex-direction:column;align-items:center;gap:2px}
+  #stage .mus-ico{background:none;border:0;padding:0;color:inherit;cursor:pointer;display:grid;place-items:center;opacity:.85}
+  #stage .mus-ico:hover{opacity:1}
+  #stage .mus-label{font-size:10px;letter-spacing:.12em;text-transform:lowercase;opacity:.7;white-space:nowrap;user-select:none}
   #stage .mus .x{opacity:0}
   #stage .mus.mute .x{opacity:1}
-  #stage .mus.mute svg{opacity:.6}
-  #stage .vtrack{position:relative;width:140px;height:24px;cursor:pointer;touch-action:none;outline:none}
-  #stage .vtrack::before{content:"";position:absolute;top:11px;left:0;right:0;height:2px;background:rgba(255,206,213,.35)}
-  #stage .vtrack .fill{position:absolute;top:11px;height:2px;left:0;background:var(--ink)}
-  #stage .vtrack .knob{position:absolute;top:5px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--ink)}
-  #stage .vtrack:focus-visible .knob{box-shadow:0 0 0 3px rgba(255,206,213,.4)}
+  #stage .mus.mute .mus-ico{opacity:.5}
+  #stage .vtrack{position:relative;width:110px;height:18px;cursor:pointer;touch-action:none;outline:none}
+  #stage .vtrack::before{content:"";position:absolute;top:8.5px;left:0;right:0;height:1px;background:rgba(255,206,213,.3)}
+  #stage .vtrack .fill{position:absolute;top:8.5px;height:1px;left:0;background:var(--ink)}
+  #stage .vtrack .knob{position:absolute;top:6px;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--ink);transition:transform .15s}
+  #stage .vtrack:hover .knob,#stage .vtrack:focus-visible .knob{transform:scale(1.35)}
   #stage .close{position:fixed;top:18px;right:var(--side);font-size:13px;font-weight:400}
 
   /* welcome pop-up */
@@ -150,9 +150,8 @@
   <div class="mwrap">
     <div class="media"></div>
     <div class="mus" title="Background music volume">
-      <button type="button" class="mus-ico" aria-label="Mute or unmute background music"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor"/><path class="x" d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      <div class="mus-head"><button type="button" class="mus-ico" aria-label="Mute or unmute background music"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M9 17.5V6l10-2v11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15.5" r="2.5" fill="currentColor"/><path class="x" d="M3 3l18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><span class="mus-label">background music</span></div>
       <div class="vtrack" role="slider" tabindex="0" aria-label="Background music volume" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i class="fill"></i><b class="knob"></b></div>
-      <span class="mus-label">background music</span>
     </div>
   </div>
   <div class="meta"><span class="name"></span><span class="track" role="slider" tabindex="0" aria-label="Position in the recording" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i><b></b></span><span class="time"></span></div>
