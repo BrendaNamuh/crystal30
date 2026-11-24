@@ -56,8 +56,14 @@
   #stage .meta{display:flex;align-items:center;gap:16px;font-size:30px}
   #stage .meta .name{text-transform:capitalize}
   #stage .meta .name:empty{display:none}
-  #stage .track{width:120px;height:1px;background:rgba(255,206,213,.3);position:relative}
-  #stage .track i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink)}
+  #stage .track{width:180px;height:22px;position:relative;cursor:pointer;touch-action:none;outline:none}
+  #stage .track::before{content:"";position:absolute;left:0;right:0;top:10px;height:2px;background:rgba(255,206,213,.3)}
+  #stage .track i{position:absolute;left:0;top:10px;height:2px;width:0;background:var(--ink)}
+  #stage .track b{position:absolute;top:6px;left:0;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--ink);transition:transform .15s}
+  #stage .track:hover b,#stage .track.drag b{transform:scale(1.25)}
+  #stage .time{font-size:12px;letter-spacing:.04em;opacity:.8;min-width:78px;font-variant-numeric:tabular-nums}
+  #stage .time:empty{display:none}
+  @media (max-width:600px){ #stage .meta{font-size:24px;gap:12px;flex-wrap:wrap;justify-content:center;max-width:92vw} #stage .track{width:150px} }
   #stage .mwrap{position:relative}
   #stage .mus{position:fixed;left:4vw;top:16px;height:24px;z-index:2;display:flex;flex-direction:row;
     align-items:center;gap:10px;color:var(--ink);cursor:default}
@@ -149,7 +155,7 @@
       <span class="mus-label">background music</span>
     </div>
   </div>
-  <div class="meta"><span class="name"></span><span class="track"><i></i></span></div>
+  <div class="meta"><span class="name"></span><span class="track" role="slider" tabindex="0" aria-label="Position in the recording" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i><b></b></span><span class="time"></span></div>
 </div>
 <audio id="player" preload="none"></audio>
 <audio id="bgm" src="media/song.mp3" loop preload="auto"></audio>
@@ -350,6 +356,35 @@ const bgm = (() => {
   set(1);
 })();
 
+// Progress line under an opened memory: shows how far along the recording is, and can be
+// tapped or dragged to jump back or forward.
+const track = stage.querySelector('.track'), knob = track.querySelector('b'), timeLbl = stage.querySelector('.time');
+const activeMedia = () => player.getAttribute('src') ? player : stage.querySelector('.media video');
+const fmt = t => { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+function showProgress(){
+  const el = activeMedia();
+  if (!el || !el.duration || !isFinite(el.duration)) return;
+  const pct = el.currentTime / el.duration * 100;
+  bar.style.width = pct + '%'; knob.style.left = pct + '%';
+  track.setAttribute('aria-valuenow', Math.round(pct));
+  timeLbl.textContent = fmt(el.currentTime) + ' / ' + fmt(el.duration);
+}
+const seekTo = e => {
+  const el = activeMedia(); if (!el || !el.duration) return;
+  const r = track.getBoundingClientRect();
+  el.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * el.duration;
+  showProgress();
+};
+track.addEventListener('pointerdown', e => { track.setPointerCapture(e.pointerId); track.classList.add('drag'); seekTo(e); });
+track.addEventListener('pointermove', e => { if (track.hasPointerCapture(e.pointerId)) seekTo(e); });
+track.addEventListener('pointerup', () => track.classList.remove('drag'));
+track.addEventListener('keydown', e => {
+  const el = activeMedia(); if (!el || !el.duration) return;
+  const step = { ArrowRight: 5, ArrowLeft: -5 }[e.key];
+  if (step) { e.preventDefault(); el.currentTime = Math.max(0, Math.min(el.duration, el.currentTime + step)); showProgress(); }
+});
+['click','pointerdown'].forEach(ev => track.addEventListener(ev, e => e.stopPropagation()));
+
 function openMemory(i){
   bgm.duck();
   const m = MEMORIES[i];
@@ -361,12 +396,13 @@ function openMemory(i){
     : `<div class="frame"></div>`;
   const vid = media.querySelector('video');
   if (vid) {
-    vid.addEventListener('timeupdate', () => { if (vid.duration) bar.style.width = (vid.currentTime / vid.duration * 100) + '%'; });
+    vid.addEventListener('timeupdate', showProgress);
+    vid.addEventListener('loadedmetadata', showProgress);
     vid.play().catch(() => { vid.muted = true; vid.play().catch(()=>{}); });
   }
   media.classList.toggle('multi', m.photos.length > 1);
   stage.querySelector('.meta .name').textContent = m.name;
-  bar.style.width = '0';
+  bar.style.width = '0'; knob.style.left = '0'; timeLbl.textContent = '';
   stage.classList.add('open'); stage.setAttribute('aria-hidden','false');
   player.pause();
   if (m.audio) { player.src = MEDIA + m.audio; player.currentTime = 0; player.play().catch(()=>{}); }
@@ -378,9 +414,8 @@ function closeMemory(){
   player.pause();
   const v = stage.querySelector('.media video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
 }
-player.addEventListener('timeupdate', () => {
-  if (player.duration) bar.style.width = (player.currentTime/player.duration*100) + '%';
-});
+player.addEventListener('timeupdate', showProgress);
+player.addEventListener('loadedmetadata', showProgress);
 stage.addEventListener('click', closeMemory);
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMemory(); });
 // Welcome: a sealed envelope. Tapping it starts the song, opens the flap and the letter
